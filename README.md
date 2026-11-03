@@ -2,7 +2,7 @@
 
 A daily NBA silhouette guessing game, inspired by "Who's That Pokémon?" and Wordle.
 
-**Play:** https://paulbeera03.github.io/whos-that-hooper/
+**Play:** https://whosdathooper.io/
 
 - One mystery player per day, from the 1950s to today
 - 3 shots to name him, up to 3 hints, or reveal the answer
