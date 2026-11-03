@@ -329,7 +329,7 @@ button.clue.locked .val { font-weight: 500; }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h11l-3-3M20 17H9l3 3"/><path d="M4 7v4M20 17v-4"/></svg>
       </button>
     </div>
-    <div class="logo" aria-label="Who's Dat Hooper?"><div class="small">Who's dat</div><div class="big">Hooper?</div></div>
+    <div class="logo" aria-label="Who's Dat Hooper?"><div class="small">Who's Dat</div><div class="big">Hooper?</div></div>
     <div class="hdr-right">
       <button class="icon-btn" id="btnStats" aria-label="Your stats">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 20V12M12 20V5M19 20v-6"/></svg>
@@ -965,8 +965,10 @@ function shareText() {
   const won = G.status === "won", n = G.guesses.length;
   const shots = "🧱".repeat(n) + (won ? "🏀" : G.gaveUp ? "🏳️" : "");
   const hints = "💡".repeat(G.hints) + "▫️".repeat(MAX_HINTS - G.hints);
-  const title = G.mode === "daily" ? `Who's Dat Hooper? #${G.day + 1}` : "Who's Dat Hooper? (practice)";
-  return `${title} ${won ? (n + 1) + "/3" : "X/3"}\n${shots}\n${hints} ${G.hints} hint${G.hints === 1 ? "" : "s"}\n${GAME_URL}`;
+  const k = n + 1;
+  const title = won ? `I guessed Who's Dat Hooper in ${k} guess${k === 1 ? "" : "es"}! How many will it take you?`
+                    : "Who's Dat Hooper stumped me today! How many guesses will it take you?";
+  return `${title}\n${shots}\n${hints} ${G.hints} hint${G.hints === 1 ? "" : "s"}\n${GAME_URL}`;
 }
 const SOCIAL_ICONS = {
   x: '<path d="M17.8 3h3.1l-6.8 7.8L22 21h-6.2l-4.9-6.4L5.3 21H2.2l7.3-8.3L2 3h6.4l4.4 5.8L17.8 3zm-1.1 16.2h1.7L7.4 4.7H5.6l11.1 14.5z"/>',
@@ -1020,7 +1022,7 @@ function showEnd(animate) {
     <div class="verdict">${verdict}</div>
     <div>
       <div class="tc-stage"><div class="tcard${animate ? "" : " flipped"}" id="tcard" style="--c1:${c1};--c2:${c2}" tabindex="0" aria-label="Trading card for ${esc(p.n)}">
-        <div class="tc-face tc-back"><div class="logo"><div class="small">Who's dat</div><div class="big">Hooper?</div></div></div>
+        <div class="tc-face tc-back"><div class="logo"><div class="small">Who's Dat</div><div class="big">Hooper?</div></div></div>
         <div class="tc-face tc-front"><div class="tc-inner">
           <div class="tc-art">
             <div class="tc-top"><span class="tc-set">${isDaily ? "No. " + String(G.day + 1).padStart(3, "0") + " · 2026" : "Practice"}</span><span class="tc-pos">${p.pos.split("-")[0]}</span></div>
