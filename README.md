@@ -1,4 +1,4 @@
-# Who's That Hooper? 🏀
+# Who's Dat Hooper? 🏀
 
 A daily NBA silhouette guessing game, inspired by "Who's That Pokémon?" and Wordle.
 
