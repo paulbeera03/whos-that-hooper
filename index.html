@@ -666,6 +666,11 @@ const FIG = (() => {
       ik: { ball: c => add(c.pelvis, dir(70), 74), f: [[-4, 15], 1], b: [[-14, 9], 1] },
       leg: { f: [26, -12, 90], b: [8, -22, 86] },
       ball: J => J.ball, airborne: 0 },
+    // LeBron: one-hand tomahawk — ball cocked behind the head, elbow high, knee driving
+    tomahawk: { spine: 168, neck: 160, depth: .66, thumb: { f: 1, b: 1 },
+      arm: { f: [164, 246, 222], b: [70, 92, 96] },
+      leg: { f: [82, 8, 76], b: [-18, -36, 18] },
+      ball: J => inHand(J.f, 14, -12, 1), airborne: 20 },
     // big: one-hand dunk, fingers wrapped over the top of the ball
     dunk: { spine: 164, neck: 158, depth: .7, thumb: { f: 1, b: 1 },
       arm: { f: [160, 170, 150], b: [-30, 2, 8] },
@@ -736,7 +741,7 @@ const SIG = {
   "Kevin Durant": ["jumper", "A smooth, nearly unblockable jump shot"],
   "Chris Paul": ["dribble", "Pinpoint passing and the midrange pull-up"],
   "Russell Westbrook": ["dunk", "The most triple-doubles in NBA history"],
-  "LeBron James": ["dunk", "Chase-down blocks; the NBA's all-time leading scorer"],
+  "LeBron James": ["tomahawk", "Tomahawk dunks, chase-down blocks; the NBA's all-time leading scorer"],
   "Kawhi Leonard": ["fadeaway", "Midrange fadeaways and lockdown defense"],
   "Damian Lillard": ["jumper", "Deep threes and series-ending buzzer-beaters"],
   "Kevin Garnett": ["fadeaway", "Fadeaway jumpers and fierce intensity"],
