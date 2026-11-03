@@ -117,6 +117,7 @@ header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center
 .clue .ic svg { width: 20px; height: 20px; }
 .clue .lbl { font-family: var(--label); font-size: 13px; letter-spacing: 0;  color: var(--mute); font-weight: 600; }
 .clue .val { font-weight: 600; font-size: 17px; line-height: 1.3; }
+.clue .sub { font-size: 14px; font-weight: 600; color: var(--flare); margin-top: 2px; }
 .clue.opening { border-color: rgba(255, 203, 5, .45); background: linear-gradient(90deg, rgba(255,203,5,.10), transparent 70%), var(--panel); }
 .clue.new { animation: flipin .5s cubic-bezier(.2, 1.2, .4, 1); }
 @keyframes flipin { from { transform: rotateX(80deg); opacity: 0; } to { transform: none; opacity: 1; } }
@@ -376,9 +377,9 @@ button.clue.locked .val { font-weight: 500; }
     <h3 id="helpTitle">How to play</h3>
     <ol>
       <li>Every day there's one mystery NBA player, from the 1950s to right now.</li>
-      <li>You get his silhouette and one opening clue. The silhouette is drawn from his listed height and weight, so a 7-foot center looks nothing like a 6-foot guard.</li>
+      <li>You get his silhouette and one opening clue. The silhouette is drawn from his listed height and weight, so a 7-foot center looks nothing like a 6-foot guard. Legends strike their signature move, like a skyhook or a one-legged fadeaway.</li>
       <li>You have <b>3 shots</b> to name him. Pick a name from the dropdown and hit Shoot.</li>
-      <li>Stuck? Unlock up to <b>3 hints</b>: scouting report, résumé, then his signature team.</li>
+      <li>Stuck? Unlock up to <b>3 hints</b>: scouting report (including what he's known for), résumé, then his signature team.</li>
       <li>Miss all 3, or tap <b>Reveal answer</b>, and he's revealed. Fewer shots and fewer hints make a better score to share.</li>
     </ol>
     <p>Difficulty rotates daily: Easy, Medium, Hard. Practice mode (the arrows button) gives you unlimited random players that don't count toward your streak.</p>
@@ -455,11 +456,13 @@ function clueFor(type, p) {
     case "seasons":
       return { lbl: "Longevity", val: p.act ? `Now playing his ${ord(p.s)} NBA season` : `Played ${p.s} NBA season${p.s > 1 ? "s" : ""}` };
     case "teams": {
-      const n = p.t.length;
-      return { lbl: "Jerseys", val: n === 1 ? (p.act ? "Has played for just one franchise" : "Spent his whole career with one franchise") : `${p.act ? "Has suited up" : "Suited up"} for ${n} different teams` };
+      const names = p.t.map(nick), n = names.length;
+      if (n === 1) return { lbl: "Career path", val: p.act ? `Has only ever played for the ${names[0]}` : `Spent his whole career with the ${names[0]}` };
+      return { lbl: "Career path", val: `${n} teams: ${names.join(" → ")}` };
     }
     case "build":
-      return { lbl: "Scouting report", val: `${posName(p.pos)}, ${ftin(p.ht)} · ${p.col ? "College: " + p.col : "No U.S. college (prep-to-pro or international)"}` };
+      return { lbl: "Scouting report", val: `${posName(p.pos)}, ${ftin(p.ht)}${p.wt ? ", " + p.wt + " lb" : ""} · ${p.col ? "College: " + p.col : "No U.S. college (prep-to-pro or international)"}`,
+               sub: SIG[p.n] ? "Known for: " + SIG[p.n][1] : null };
     case "resume": {
       const a = [];
       if (p.mvp) a.push(`${p.mvp}× MVP`);
@@ -475,7 +478,7 @@ function clueFor(type, p) {
   }
 }
 const HINT_ORDER = ["build", "resume", "team"];
-const HINT_TEASE = ["Scouting report: position, height, college", "Résumé: career span and accolades", "Signature team: the jersey he wore most"];
+const HINT_TEASE = ["Scouting report: position, size, college, what he's known for", "Résumé: career span and accolades", "Signature team: the jersey he wore most"];
 const ICONS = {
   draft: '<path d="M4 20h16M6 20V9l6-5 6 5v11M10 20v-6h4v6"/>',
   seasons: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/>',
@@ -554,7 +557,7 @@ const FIG = (() => {
     const hp = { f: add(pelvis, nrm, L.hip * w), b: add(pelvis, nrm, -L.hip * w) };
     const J = { pelvis, chest, head };
     // optional: place the ball first, then reach each hand to it (two-bone IK)
-    const ballIK = S.ik ? S.ik.ball({ chest, head, sh, sv }) : null;
+    const ballIK = S.ik ? S.ik.ball({ chest, head, sh, sv, pelvis }) : null;
     for (const s of ["f", "b"]) {
       const a = S.arm[s], g = S.leg[s];
       let el, wr;
@@ -635,6 +638,34 @@ const FIG = (() => {
             b: [[-17, 5], -1] },  // guide hand on the side of the ball
       leg: { f: [16, -8, 40], b: [-6, -14, 30] },
       ball: J => J.ball, airborne: 22 },
+    // Kareem: skyhook — sideways, ball arm swept straight over the head, off arm shielding
+    skyhook: { spine: 194, neck: 186, depth: .55, thumb: { f: -1, b: 1 },
+      arm: { f: [188, 196, 205], b: [78, 96, 92] },
+      leg: { f: [66, 6, 78], b: [-6, -2, 50] },
+      ball: J => inHand(J.f, 18, -11, -1), airborne: 18 },
+    // Dirk: one-legged fadeaway — leaning back, front knee lifted, high release
+    fadeaway: { spine: 212, neck: 196, depth: .62, thumb: { f: -1, b: -1 },
+      arm: { f: [0, 0, 160], b: [0, 0, 118] },
+      ik: { ball: c => add(c.head, dir(150), 44), f: [[-3, 18], 1], b: [[-17, 5], -1] },
+      leg: { f: [74, 30, 92], b: [-16, -18, 34] },
+      ball: J => J.ball, airborne: 16 },
+    // step-back: shooting while drifting backward, feet split front-to-back
+    stepback: { spine: 192, neck: 182, depth: .66, thumb: { f: -1, b: -1 },
+      arm: { f: [0, 0, 170], b: [0, 0, 126] },
+      ik: { ball: c => add(c.head, dir(166), 41), f: [[-3, 18], 1], b: [[-17, 5], -1] },
+      leg: { f: [30, 4, 62], b: [-26, -22, 26] },
+      ball: J => J.ball, airborne: 14 },
+    // Gervin / Wilt: finger roll — reaching high, ball rolling off the fingertips, takeoff knee up
+    fingerroll: { spine: 172, neck: 166, depth: .66, thumb: { f: 1, b: 1 },
+      arm: { f: [168, 174, 176], b: [-22, -2, 4] },
+      leg: { f: [78, 8, 74], b: [-12, -30, 22] },
+      ball: J => inHand(J.f, 26, 6, 1), airborne: 22 },
+    // Rick Barry: underhanded free throw — knees bent, both hands under the ball in front
+    granny: { spine: 170, neck: 164, depth: .6, thumb: { f: 1, b: -1 },
+      arm: { f: [0, 0, 112], b: [0, 0, 100] },
+      ik: { ball: c => add(c.pelvis, dir(70), 74), f: [[-4, 15], 1], b: [[-14, 9], 1] },
+      leg: { f: [26, -12, 90], b: [8, -22, 86] },
+      ball: J => J.ball, airborne: 0 },
     // big: one-hand dunk, fingers wrapped over the top of the ball
     dunk: { spine: 164, neck: 158, depth: .7, thumb: { f: 1, b: 1 },
       arm: { f: [160, 170, 150], b: [-30, 2, 8] },
@@ -669,12 +700,87 @@ const FIG = (() => {
   return { svg, POSES };
 })();
 
-function poseFor(pos) { const f = pos[0]; return f === "G" ? "dribble" : f === "C" ? "dunk" : "jumper"; }
+
+// signature moves / traits for notable players: [pose, "Known for" line]
+const SIG = {
+  "Kareem Abdul-Jabbar": ["skyhook", "The unstoppable skyhook"],
+  "Dirk Nowitzki": ["fadeaway", "A one-legged fadeaway jumper"],
+  "George Gervin": ["fingerroll", "A silky finger roll"],
+  "Wilt Chamberlain": ["fingerroll", "Scored 100 points in a single game (1962)"],
+  "Rick Barry": ["granny", "Shooting his free throws underhanded"],
+  "Michael Jordan": ["fadeaway", "A turnaround fadeaway jumper"],
+  "Kobe Bryant": ["fadeaway", "Turnaround fadeaways and an 81-point game (2006)"],
+  "James Harden": ["stepback", "The step-back three"],
+  "Luka Dončić": ["stepback", "Step-back threes"],
+  "Stephen Curry": ["jumper", "The most three-pointers in NBA history"],
+  "Ray Allen": ["jumper", "A pure jumper and a famous corner three in the 2013 Finals"],
+  "Reggie Miller": ["jumper", "8 points in 9 seconds against the Knicks (1995)"],
+  "Allen Iverson": ["dribble", "A killer crossover"],
+  "Tim Hardaway": ["dribble", "The \"UTEP Two-Step\" crossover"],
+  "Kyrie Irving": ["dribble", "Elite ball-handling and acrobatic finishes"],
+  "Shaquille O'Neal": ["dunk", "Dunks that tore down backboards"],
+  "Dwight Howard": ["dunk", "Won the 2008 Dunk Contest wearing a cape"],
+  "Vince Carter": ["dunk", "A legendary 2000 Dunk Contest"],
+  "Dominique Wilkins": ["dunk", "Windmill dunks"],
+  "Julius Erving": ["dunk", "Soaring dunks, including one from the free-throw line"],
+  "Hakeem Olajuwon": ["fadeaway", "Dazzling post footwork and shot-blocking"],
+  "Magic Johnson": ["dribble", "No-look passes from a 6′9″ point guard"],
+  "Larry Bird": ["jumper", "Clutch jumpers and no-look passes"],
+  "Steve Nash": ["dribble", "Four 50-40-90 shooting seasons"],
+  "Dennis Rodman": ["fingerroll", "Seven straight rebounding titles"],
+  "Dikembe Mutombo": ["dunk", "Blocking shots, then wagging his finger"],
+  "Giannis Antetokounmpo": ["dunk", "Euro-step drives that cover half the court"],
+  "Manu Ginóbili": ["fingerroll", "Bringing the Euro step to the NBA"],
+  "Tony Parker": ["fingerroll", "Teardrop floaters in the lane"],
+  "Nikola Jokić": ["fadeaway", "One-legged fadeaways and point-guard passing as a center"],
+  "Kevin Durant": ["jumper", "A smooth, nearly unblockable jump shot"],
+  "Chris Paul": ["dribble", "Pinpoint passing and the midrange pull-up"],
+  "Russell Westbrook": ["dunk", "The most triple-doubles in NBA history"],
+  "LeBron James": ["dunk", "Chase-down blocks; the NBA's all-time leading scorer"],
+  "Kawhi Leonard": ["fadeaway", "Midrange fadeaways and lockdown defense"],
+  "Damian Lillard": ["jumper", "Deep threes and series-ending buzzer-beaters"],
+  "Kevin Garnett": ["fadeaway", "Fadeaway jumpers and fierce intensity"],
+  "Tim Duncan": ["jumper", "The bank shot"],
+  "Karl Malone": ["jumper", "Pick-and-roll finishes and elbow jumpers"],
+  "John Stockton": ["dribble", "The NBA's all-time leader in assists and steals"],
+  "Bill Russell": ["dunk", "Shot-blocking defense that anchored a dynasty"],
+  "Oscar Robertson": ["dribble", "Averaging a triple-double for a whole season (1961–62)"],
+  "Jerry West": ["jumper", "Clutch jump shots"],
+  "Pete Maravich": ["dribble", "Floppy socks, flashy passes and dazzling ball-handling"],
+  "Bob Cousy": ["dribble", "Behind-the-back passes and dribbles in the 1950s"],
+  "Victor Wembanyama": ["stepback", "A 7-footer who dribbles and shoots like a guard"],
+  "Zion Williamson": ["dunk", "Explosive dunks from a powerful frame"],
+  "Ja Morant": ["dunk", "Gravity-defying dunks for a guard"],
+  "Shai Gilgeous-Alexander": ["stepback", "Herky-jerky drives and a deadly midrange game"],
+  "Anthony Edwards": ["dunk", "Poster dunks"],
+  "Dwyane Wade": ["fingerroll", "Chase-down blocks and Euro-step finishes"],
+  "Paul Pierce": ["stepback", "Step-back jumpers"],
+  "Carmelo Anthony": ["jumper", "Jab-step jumpers"],
+  "Tracy McGrady": ["jumper", "13 points in 35 seconds against the Spurs (2004)"],
+  "Patrick Ewing": ["fadeaway", "Baseline fadeaway jumpers"],
+  "Charles Barkley": ["dunk", "Dominating the glass at just 6′6″"],
+  "Scottie Pippen": ["jumper", "Lockdown perimeter defense"],
+  "Kevin McHale": ["fadeaway", "Up-and-under post moves"],
+  "Moses Malone": ["dunk", "Relentless offensive rebounding"],
+  "Isiah Thomas": ["dribble", "Crafty ball-handling"],
+  "Elgin Baylor": ["fingerroll", "Hang-time drives to the rim"],
+  "Earl Monroe": ["dribble", "Spin moves"],
+  "Jason Kidd": ["dribble", "Triple-doubles and court vision"],
+  "Gary Payton": ["dribble", "Trash talk and suffocating defense"],
+  "Ben Wallace": ["dunk", "Four Defensive Player of the Year awards"],
+  "Klay Thompson": ["jumper", "37 points in one quarter (2015)"],
+  "Jalen Brunson": ["stepback", "Footwork and pump fakes in the midrange"],
+  "Joel Embiid": ["fadeaway", "Post moves and midrange touch from a 7-footer"],
+  "Yao Ming": ["jumper", "A 7′6″ center with a soft shooting touch"],
+  "David Robinson": ["dunk", "A 71-point game (1994)"],
+  "Clyde Drexler": ["dunk", "High-flying dunks"],
+};
+function poseFor(p) { if (SIG[p.n]) return SIG[p.n][0]; const f = p.pos[0]; return f === "G" ? "dribble" : f === "C" ? "dunk" : "jumper"; }
 const heightScale = ht => Math.min(1, Math.max(.7, .74 + (ht - 66) / 24 * .26));
 // body build from listed height + weight (BMI): <1 = lean/long, >1 = broad/heavy
 const buildFactor = p => { if (!p.wt) return 1; const bmi = 703 * p.wt / (p.ht * p.ht); return bmi < 24.2 ? Math.max(.82, 1 + (bmi - 24.2) / 4.4 * .16) : Math.min(1.36, 1 + (bmi - 24.2) / 8.6 * .32); };
 function figureMarkup(p, gid, withSilhouette) {
-  const pose = poseFor(p.pos), sc = heightScale(p.ht), bw = buildFactor(p), [c1, c2] = teamColors(p.pr);
+  const pose = poseFor(p), sc = heightScale(p.ht), bw = buildFactor(p), [c1, c2] = teamColors(p.pr);
   const col = FIG.svg(pose, sc, { skin: "#161b2f", kit: `url(#${gid})`, shoe: c2, color: true }, bw);
   const defs = `<defs><linearGradient id="${gid}" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset=".6" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs>`;
   if (!withSilhouette) return defs + col.shadow + col.body;
@@ -748,7 +854,7 @@ function renderBalls() {
 }
 function clueHTML(type, cls) {
   const c = clueFor(type, G.p);
-  return `<div class="clue ${cls}"><span class="ic">${icon(type)}</span><div><div class="lbl">${esc(c.lbl)}</div><div class="val">${esc(c.val)}</div></div></div>`;
+  return `<div class="clue ${cls}"><span class="ic">${icon(type)}</span><div><div class="lbl">${esc(c.lbl)}</div><div class="val">${esc(c.val)}</div>${c.sub ? `<div class="sub">${esc(c.sub)}</div>` : ""}</div></div>`;
 }
 function renderClues(newIdx) {
   const done = G.status !== "playing";
@@ -920,6 +1026,7 @@ function showEnd(animate) {
           <div class="tc-info">
             ${p.best ? `<div class="row"><span>Best season</span><span>${p.best[0] - 1}–${String(p.best[0]).slice(2)} · ${p.best[1].toFixed(1)} PPG</span></div>` : ""}
             <div class="row"><span>${p.act ? "Current team" : "Final team"}</span><span>${esc(p.last)}</span></div>
+            ${SIG[p.n] ? `<div class="row"><span>Known for</span><span>${esc(SIG[p.n][1])}</span></div>` : ""}
             <div class="row"><span>Draft · Seasons</span><span>${draft} · ${p.s}</span></div>
             <div class="row"><span>Career points</span><span>${p.pts.toLocaleString()}</span></div>
             <div class="tc-badges">${badges.join("")}</div>
